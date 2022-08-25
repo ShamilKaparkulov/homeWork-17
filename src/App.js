@@ -1,31 +1,26 @@
 import { useEffect } from "react";
-import { Component, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 import ExpenseItem from "./components/Expenses/ExpenseItem";
+import { useCustomForm } from "./components/hooks/customFetchHook";
 import AddExpense from "./components/NewExpense/AddExpense";
 
 //
 
 function App() {
   const [expensesData, setExpensesData] = useState([]);
-  const [isValid, setIsvalid] = useState(false);
+  const { loading, sendRequest } = useCustomForm();
+
   const saveDatatoArrayHandler = async (formData) => {
-    await fetch(
-      "https://todo-tracker-c60af-default-rtdb.firebaseio.com/shamil.json",
-      {
-        method: "POST",
-        body: JSON.stringify(formData),
-      }
-    );
+    await sendRequest({
+      url: "https://todo-tracker-c60af-default-rtdb.firebaseio.com/shamil.json",
+      method: "POST",
+      body: formData,
+    });
     getData();
-    setIsvalid(true);
   };
 
-  async function getData() {
-    const response = await fetch(
-      "https://todo-tracker-c60af-default-rtdb.firebaseio.com/shamil.json"
-      );
-      const data = await response.json();
+  const loopData = (data) => {
     let todos = [];
     for (const key in data) {
       todos.push({
@@ -35,12 +30,16 @@ function App() {
         date: data[key].date,
       });
     }
-    
     setExpensesData(todos);
-    setTimeout(() => {
-      setIsvalid(false)
-      
-    }, 1000);
+  };
+
+  async function getData() {
+    await sendRequest(
+      {
+        url: "https://todo-tracker-c60af-default-rtdb.firebaseio.com/shamil.json",
+      },
+      loopData
+    );
   }
 
   useEffect(() => {
@@ -49,7 +48,11 @@ function App() {
 
   return (
     <div className="app-main-block">
-      {isValid ? <p style={{textAlign:'center',color:'red'}}>loading...</p> : ""}
+      {loading ? (
+        <p style={{ textAlign: "center", color: "red" }}>loading...</p>
+      ) : (
+        ""
+      )}
       <AddExpense onSaveDtaToArray={saveDatatoArrayHandler} />
       {expensesData.map((element) => {
         return (
